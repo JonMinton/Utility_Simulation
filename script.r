@@ -67,6 +67,7 @@ ra_tab03_24months <- data.frame(
 #####################################
 ######################################
 n_psa <- 10000
+n_boots <- 10000
 
 attach(ra_tab01_following_stroke)
 prop_dead <- rbinom(
@@ -87,30 +88,39 @@ colnames(mrs_following_stroke) <- names(ra_tab01_24_months)
 
 # three state reduction:
 dep_indep_following_nonfatal_stroke <- cbind(
-  apply(mrs_following_stroke[,1:3], 1, sum), 
-  apply(mrs_following_stroke[,4:6], 1, sum)
+  independent=apply(mrs_following_stroke[,1:3], 1, sum), 
+  dependent=apply(mrs_following_stroke[,4:6], 1, sum)
   )
-colnames(dep_indep_following_nonfatal_stroke) <- c("independent", "dependent")
+
 
 prop_alive <- 1-prop_dead
 
 dead_dep_indep_following_stroke <- cbind(
-  prop_dead, 
-  prop_alive * dep_indep_following_nonfatal_stroke[,1], 
-  prop_alive * dep_indep_following_nonfatal_stroke[,2]
+  dead=prop_dead, 
+  independent=prop_alive * dep_indep_following_nonfatal_stroke[,"independent"], 
+  dependent=prop_alive * dep_indep_following_nonfatal_stroke[,"dependent"]
   )
-colnames(dead_dep_indep_following_stroke) <- c("dead", "independent", "dependent")
+
 dead_dep_indep_following_stroke <- data.frame(dead_dep_indep_following_stroke)
 dead_dep_indep_following_stroke$psa <- 1:n_psa 
+dead_dep_indep_following_stroke <- dead_dep_indep_following_stroke[
+  c("psa", "dead", "dependent", "independent")
+  ]
 
+tmp_long <- melt(dead_dep_indep_following_stroke, 
+                 variable.name="state", 
+                 id.var="psa"
+                 )
 
-tmp_long <- melt(dead_dep_indep_following_stroke, id.var="psa")
+# g1 <- ggplot(tmp_long, aes(x=value, group=state))
+# g1 + geom_density(aes(fill=state, linetype=state), alpha=0.5) + coord_cartesian(xlim=c(0, 1))
 
-g1 <- ggplot(tmp_long, aes(x=value, group=variable))
-g1 + geom_density(aes(fill=variable), alpha=0.5) 
+# geom_area
 
+g1 <- qplot(x=psa, y=value, group=state, colour=state, fill=state, data=tmp_long, geom="area")
+g1 + scale_fill_grey() + scale_colour_grey() + labs(x="PSA number", y="Cumulative proportion")
 
-write.csv(DeadDepInd_followingStroke, "C:/temp/tmp5.csv")
+# write.csv(dead_dep_indep_following_stroke, "data/generated/dead_dep_indep_following_stroke.csv")
 
 
 ######################################################
@@ -125,21 +135,33 @@ util_ests <- data.frame(
   s5 = rnorm(n_psa, mean[var=="s5"], sd[var=="s5"])
   )
 detach(ra_tab03_24months)
+util_ests$psa <- 1:n_psa
 
-attach(util_ests)
-util_mult_ests <- data.frame(
-  mult_s1 = s1/s0,
-  mult_s2 = s2/s0,
-  mult_s3 = s3/s0,
-  mult_s4 = s4/s0,
-  mult_s5 = s5/s0
+util_ests <- util_ests[
+  c("psa", "s0", "s1", "s2", "s3", "s4", "s5")
+  ]
+
+util_mult_ests <- transform(
+  util_ests,
+  s1=s1/s0,
+  s2=s2/s0,
+  s3=s3/s0,
+  s4=s4/s0,
+  s5=s5/s0,
+  s0=NULL
   )
-detach(util_ests)
 
-tmp <- melt(util_mult_ests)
+util_mult_ests <- util_mult_ests[
+  c("psa", "s1", "s2","s3", "s4", "s5")
+  ]
 
-g1 <- ggplot(tmp, aes(x=value, group=variable, fill=variable, colour=variable))
-g1 + geom_density(alpha=0.5)
+
+tmp <- melt(util_mult_ests, id.var="psa", variable.name="state")
+
+g1 <- ggplot(tmp, aes(x=value, group=state, fill=state, linetype=state, colour=state))
+g2 <- g1 + geom_density(alpha=0.5) + scale_fill_grey() + scale_colour_grey() + coord_flip()
+g3 <- g2 + labs(x="HRQL estimates", y="Density of estimates") + geom_vline(xintercept=c(0,1), linetype="dashed")
+print(g3)
 
 #######################################################
 
@@ -152,34 +174,64 @@ stroke_ind_sums <- apply(stroke_ind, 1, sum)
 stroke_dep <- apply(stroke_dep, 2, function (x) x / stroke_dep_sums)
 stroke_ind <- apply(stroke_ind, 2, function (x) x / stroke_ind_sums)
 
+stroke_dep <- as.data.frame(stroke_dep)
 
-attach(util_mult_ests)
-stroke_ind_utils <-   stroke_ind[,"mrs0"] * 1        + 
-                      stroke_ind[,"mrs1"] * mult_s1  + 
-                      stroke_ind[,"mrs2"] * mult_s2
+stroke_dep <- data.frame(
+  psa=1:n_psa,
+  stroke_dep
+  )
 
-stroke_dep_utils <-   stroke_dep[,"mrs3"] * mult_s3  + 
-                      stroke_dep[,"mrs4"] * mult_s4  +
-                      stroke_dep[,"mrs5"] * mult_s5
+stroke_ind <- as.data.frame(stroke_ind)
+stroke_ind <- data.frame(
+  psa=1:n_psa,
+  stroke_ind
+  )
 
-detach(util_mult_ests)
+tmp_dep <- melt(stroke_dep,
+                id.var="psa",
+                variable.name="state"
+                )
+
+tmp_ind <- melt(stroke_ind,
+                id.var="psa",
+                variable.name="state"
+                )
+
+g1 <- qplot(x=psa, y=value, group=state, colour=state, fill=state, data=tmp_dep, geom="area")
+g1 + scale_fill_grey() + scale_colour_grey() + labs(x="PSA number", y="Cumulative proportion")
 
 
+g1 <- qplot(x=psa, y=value, group=state, colour=state, fill=state, data=tmp_ind, geom="area")
+g1 + scale_fill_grey() + scale_colour_grey() + labs(x="PSA number", y="Cumulative proportion")
+
+rm(tmp_dep, tmp_ind)
+
+
+stroke_util_mult_ind_dep <- data.frame(
+  psa=1:n_psa,
+  independent = stroke_ind[,"mrs0"] * 1        + 
+                stroke_ind[,"mrs1"] * util_mult_ests$s1  + 
+                stroke_ind[,"mrs2"] * util_mult_ests$s2,
+  dependent   = stroke_dep[,"mrs3"] * util_mult_ests$s3  + 
+                stroke_dep[,"mrs4"] * util_mult_ests$s4  +
+                stroke_dep[,"mrs5"] * util_mult_ests$s5
+  )
+
+
+tmp <- melt(stroke_util_mult_ind_dep, id.var="psa", variable.name="state")
+
+g1 <- ggplot(data=tmp) + geom_density(
+  aes(x=value, group=state, colour=state, fill=state),
+  alpha=0.5
+  )
+g2 <- g1 + scale_fill_grey() + scale_colour_grey() + labs(x="HRQL multiplier estimate") 
+g2 + geom_vline(xintercept=c(0,1), linetype="dashed")
 ###
 
-n_boots <- 10000
 
-stroke_ind_utils_mean <- bootstrap(stroke_ind_utils)
-stroke_dep_utils_mean <- bootstrap(stroke_dep_utils)
+stroke_ind_utils_mean <- bootstrap(stroke_util_mult_ind_dep$independent)
+stroke_dep_utils_mean <- bootstrap(stroke_util_mult_ind_dep$independent)
 
-plot(density(stroke_ind_utils), ylim=c(0, max(density(stroke_ind_utils)$y) * 1.5), xlim=c(0,1), main="Utility multipliers following stroke")
-
-lines(density(stroke_dep_utils), lty="dashed")
-lines(density(stroke_ind_utils_mean), lwd=2)
-lines(density(stroke_dep_utils_mean), lwd=2, lty="dashed")
-
-write.csv(Stroke.Ind.utils.mean[1:1000], "clipboard")
-write.csv(Stroke.Dep.utils.mean[1:1000], "clipboard")
 
 ########################################################################
 #####
