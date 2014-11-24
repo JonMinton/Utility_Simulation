@@ -226,11 +226,25 @@ g1 <- ggplot(data=tmp) + geom_density(
   )
 g2 <- g1 + scale_fill_grey() + scale_colour_grey() + labs(x="HRQL multiplier estimate") 
 g2 + geom_vline(xintercept=c(0,1), linetype="dashed")
+rm(tmp)
 ###
 
 
-stroke_ind_utils_mean <- bootstrap(stroke_util_mult_ind_dep$independent)
-stroke_dep_utils_mean <- bootstrap(stroke_util_mult_ind_dep$independent)
+utils_bootstrapped_means <- data.frame(
+  boot= 1:10000,                                    
+  independent= bootstrap(stroke_util_mult_ind_dep$independent),
+  dependent = bootstrap(stroke_util_mult_ind_dep$dependent)
+  )
+
+tmp <- melt(utils_bootstrapped_means, id.var="boot", variable.name="state")
+
+g1 <- ggplot(data=tmp) + geom_density(
+  aes(x=value, group=state, colour=state, fill=state),
+  alpha=1
+)
+g2 <- g1 + scale_fill_grey() + scale_colour_grey() + labs(x="Bootstrapped mean of HRQL multiplier estimate") 
+g2 + geom_vline(xintercept=c(0,1), linetype="dashed")
+rm(tmp)
 
 
 ########################################################################
@@ -247,56 +261,29 @@ stroke_dep_utils_mean <- bootstrap(stroke_util_mult_ind_dep$independent)
 # Independent State : mRS 0-2
 # Dependent State : mRS 3-5
 
-GOS_5 <- mRS_followingStroke[,1:2]
-GOS_4 <- mRS_followingStroke[,3:4]
-GOS_3 <- mRS_followingStroke[,5:6]
+gos_5 <- mrs_following_stroke[,c("mrs0", "mrs1")]
+gos_4 <- mrs_following_stroke[,c("mrs2", "mrs3")]
+gos_3 <- mrs_following_stroke[,c("mrs4", "mrs5")]
 
 
-GOS_5.sums <- apply(GOS_5, 1, sum)
-GOS_4.sums <- apply(GOS_4, 1, sum)
-GOS_3.sums <- apply(GOS_3, 1, sum)
+gos_5_sums <- apply(gos_5, 1, sum)
+gos_4_sums <- apply(gos_4, 1, sum)
+gos_3_sums <- apply(gos_3, 1, sum)
 
-GOS_5 <- apply(GOS_5, 2, function (x) x / GOS_5.sums)
-GOS_4 <- apply(GOS_4, 2, function (x) x / GOS_4.sums)
-GOS_3 <- apply(GOS_3, 2, function (x) x / GOS_3.sums)
+gos_5 <- apply(gos_5, 2, function (x) x / gos_5_sums)
+gos_4 <- apply(gos_4, 2, function (x) x / gos_4_sums)
+gos_3 <- apply(gos_3, 2, function (x) x / gos_3_sums)
 
+gos_utils <- data.frame(
+  gos5 = gos_5[,"mrs0"] * 1                   + gos_5[,"mrs1"]  * util_mult_ests$s1,
+  gos4 = gos_4[,"mrs2"] * util_mult_ests$s2   + gos_4[,"mrs3"]  * util_mult_ests$s3,
+  gos3 = gos_3[,"mrs4"] * util_mult_ests$s4   + gos_3[,"mrs5"]  * util_mult_ests$s5
+  )
 
-GOS_5.utils <- GOS_5[,1] * 1        + GOS_5[,2] * mult.s1
-GOS_4.utils <- GOS_4[,1] * mult.s2  + GOS_4[,2] * mult.s3
-GOS_3.utils <- GOS_3[,1] * mult.s4  + GOS_3[,2] * mult.s5
-
-
-plot(density(GOS_5.utils), ylim=c(0, max(density(GOS_5.utils)$y) * 1.5), xlim=c(0,1), main="Utility multipliers following IC Bleed")
-
-lines(density(GOS_4.utils), col="red")
-lines(density(GOS_3.utils), col="green")
-
-GOS_5.mean <- vector("numeric", n.bootstraps)
-GOS_4.mean <- vector("numeric", n.bootstraps)
-GOS_3.mean <- vector("numeric", n.bootstraps)
-
-for (i in 1:n.bootstraps){GOS_5.mean[i] <- mean(GOS_5.utils[sample(1:N.PSA, n.bootstraps, replace=T)])}
-for (i in 1:n.bootstraps){GOS_4.mean[i] <- mean(GOS_4.utils[sample(1:N.PSA, n.bootstraps, replace=T)])}
-for (i in 1:n.bootstraps){GOS_3.mean[i] <- mean(GOS_3.utils[sample(1:N.PSA, n.bootstraps, replace=T)])}
-
-lines(density(GOS_5.mean), lwd=2)
-lines(density(GOS_4.mean), lwd=2, col="red")
-lines(density(GOS_3.mean), lwd=2, col="green")
-
-quantile(GOS_5.mean, c(0.025, 0.5, 0.975))
-quantile(GOS_4.mean, c(0.025, 0.5, 0.975))
-quantile(GOS_3.mean, c(0.025, 0.5, 0.975))
-
-#write.csv(Stroke.Ind.utils.mean[1:1000], "clipboard")
-#write.csv(Stroke.Dep.utils.mean[1:1000], "clipboard")
-
-write.csv(cbind(gos3=GOS_3.mean, gos4=GOS_4.mean, gos5=GOS_5.mean), "C:/temp/tmp8.csv")
-mean(GOS_5.mean)
-
-# mean util following ICH
-# Frequencies: GOS 2, 3, 4,  5
-gos_followingICH <- rdirichlet(N.PSA, c(115.5, 140, 79.3, 665.1))
-util_followingICH <- gos_followingICH[,1] * 0  + gos_followingICH[,2] * GOS_3.mean + gos_followingICH[,3] * GOS_4.mean + gos_followingICH[,4] * GOS_5.mean
-# Not doing this this way for now. Will do for each GOS
+gos_utils_bootstrapped_means <- data.frame(
+  gos5 = bootstrap(gos_utils$gos5),
+  gos4 = bootstrap(gos_utils$gos4),
+  gos3 = bootstrap(gos_utils$gos3)
+  )
 
 
