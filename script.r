@@ -208,7 +208,7 @@ tmp_ind <- melt(stroke_ind,
 g1 <- qplot(x=psa, y=value, group=state, colour=state, fill=state, data=tmp_dep, geom="area")
 g2 <- g1 + scale_fill_grey() + scale_colour_grey() + labs(x="PSA number", y="Cumulative proportion")
 
-tiff("figures/fig_04.tiff", 1000, 1000)
+tiff("figures/fig_04.tiff", 600, 600)
 print(g2)
 dev.off()
 
@@ -216,7 +216,7 @@ dev.off()
 g1 <- qplot(x=psa, y=value, group=state, colour=state, fill=state, data=tmp_ind, geom="area")
 g2 <- g1 + scale_fill_grey() + scale_colour_grey() + labs(x="PSA number", y="Cumulative proportion")
 
-tiff("figures/fig_05.tiff", 1000, 1000)
+tiff("figures/fig_05.tiff", 600, 600)
 print(g2)
 dev.off()
 
@@ -243,7 +243,7 @@ g1 <- ggplot(data=tmp) + geom_density(
 g2 <- g1 + scale_fill_grey() + scale_colour_grey() + labs(x="HRQL multiplier estimate") 
 g3 <- g2 + geom_vline(xintercept=c(0,1), linetype="dashed")
 
-tiff("figures/fig_06.tiff", 1000, 1000)
+tiff("figures/fig_06.tiff", 600, 600)
 print(g3)
 dev.off()
 
@@ -265,7 +265,7 @@ g1 <- ggplot(data=tmp) + geom_density(
 )
 g2 <- g1 + scale_fill_grey() + scale_colour_grey() + labs(x="Bootstrapped mean of HRQL multiplier estimate") 
 g3 <- g2 + geom_vline(xintercept=c(0,1), linetype="dashed")
-tiff("figures/fig_07.tiff", 1000, 1000)
+tiff("figures/fig_07.tiff", 600, 600)
 print(g3)
 dev.off()
 
