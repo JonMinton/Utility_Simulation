@@ -118,7 +118,11 @@ tmp_long <- melt(dead_dep_indep_following_stroke,
 # geom_area
 
 g1 <- qplot(x=psa, y=value, group=state, colour=state, fill=state, data=tmp_long, geom="area")
-g1 + scale_fill_grey() + scale_colour_grey() + labs(x="PSA number", y="Cumulative proportion")
+g2 <- g1 + scale_fill_grey() + scale_colour_grey() + labs(x="PSA number", y="Cumulative proportion")
+
+tiff("figures/fig_02.tiff", 1000, 1000)
+print(g2)
+dev.off()
 
 # write.csv(dead_dep_indep_following_stroke, "data/generated/dead_dep_indep_following_stroke.csv")
 
@@ -163,6 +167,10 @@ g2 <- g1 + geom_density(alpha=0.5) + scale_fill_grey() + scale_colour_grey() + c
 g3 <- g2 + labs(x="HRQL estimates", y="Density of estimates") + geom_vline(xintercept=c(0,1), linetype="dashed")
 print(g3)
 
+tiff("figures/fig_03.tiff", 1000, 1000)
+print(g3)
+dev.off()
+
 #######################################################
 
 stroke_ind <- mrs_following_stroke[,1:3]
@@ -198,11 +206,19 @@ tmp_ind <- melt(stroke_ind,
                 )
 
 g1 <- qplot(x=psa, y=value, group=state, colour=state, fill=state, data=tmp_dep, geom="area")
-g1 + scale_fill_grey() + scale_colour_grey() + labs(x="PSA number", y="Cumulative proportion")
+g2 <- g1 + scale_fill_grey() + scale_colour_grey() + labs(x="PSA number", y="Cumulative proportion")
+
+tiff("figures/fig_04.tiff", 1000, 1000)
+print(g2)
+dev.off()
 
 
 g1 <- qplot(x=psa, y=value, group=state, colour=state, fill=state, data=tmp_ind, geom="area")
-g1 + scale_fill_grey() + scale_colour_grey() + labs(x="PSA number", y="Cumulative proportion")
+g2 <- g1 + scale_fill_grey() + scale_colour_grey() + labs(x="PSA number", y="Cumulative proportion")
+
+tiff("figures/fig_05.tiff", 1000, 1000)
+print(g2)
+dev.off()
 
 rm(tmp_dep, tmp_ind)
 
@@ -225,7 +241,12 @@ g1 <- ggplot(data=tmp) + geom_density(
   alpha=0.5
   )
 g2 <- g1 + scale_fill_grey() + scale_colour_grey() + labs(x="HRQL multiplier estimate") 
-g2 + geom_vline(xintercept=c(0,1), linetype="dashed")
+g3 <- g2 + geom_vline(xintercept=c(0,1), linetype="dashed")
+
+tiff("figures/fig_06.tiff", 1000, 1000)
+print(g3)
+dev.off()
+
 rm(tmp)
 ###
 
@@ -243,7 +264,12 @@ g1 <- ggplot(data=tmp) + geom_density(
   alpha=1
 )
 g2 <- g1 + scale_fill_grey() + scale_colour_grey() + labs(x="Bootstrapped mean of HRQL multiplier estimate") 
-g2 + geom_vline(xintercept=c(0,1), linetype="dashed")
+g3 <- g2 + geom_vline(xintercept=c(0,1), linetype="dashed")
+tiff("figures/fig_07.tiff", 1000, 1000)
+print(g3)
+dev.off()
+
+
 rm(tmp)
 
 
